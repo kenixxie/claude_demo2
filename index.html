@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>楼宇管理平台</title>
+  <style>
+    /* 通用样式 */
+    body {
+      font-family: '微软雅黑', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    /* 地图样式 */
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+    /* 统计数据样式 */
+    .stats-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .stats-item {
+      background-color: #f1f1f1;
+      padding: 10px;
+      text-align: center;
+      flex: 1;
+      margin: 0 10px;
+    }
+    /* 设备管理样式 */
+    .device-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .device-table th, .device-table td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .device-table th {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>楼宇管理平台</h1>
+    <h2>物联设备管理</h2>
+    <h3>设备控制台</h3>
+    <div id="map"></div>
+    <div class="stats-container">
+      <div class="stats-item">
+        <h4>设备数量</h4>
+        <p id="device-count">0</p>
+      </div>
+      <div class="stats-item">
+        <h4>在线设备</h4>
+        <p id="online-devices">0</p>
+      </div>
+      <div class="stats-item">
+        <h4>离线设备</h4>
+        <p id="offline-devices">0</p>
+      </div>
+      <div class="stats-item">
+        <h4>今日预警数</h4>
+        <p id="today-alerts">0</p>
+      </div>
+      <div class="stats-item">
+        <h4>今日处理率</h4>
+        <p id="alert-resolution-rate">0%</p>
+      </div>
+    </div>
+    <h3>设备管理</h3>
+    <table class="device-table">
+      <thead>
+        <tr>
+          <th>设备编号</th>
+          <th>设备类型</th>
+          <th>设备名称</th>
+          <th>设备状态</th>
+          <th>型号</th>
+          <th>安装位置</th>
+          <th>安装日期</th>
+          <th>下次维保日期</th>
+        </tr>
+      </thead>
+      <tbody id="device-table-body"></tbody>
+    </table>
+  </div>
+
+  <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=NX7peh5PuW5WLdyRYk1CU2T13HIjYqVU"></script>
+  <script>
+    // 初始化百度地图
+    var map = new BMap.Map("map");
+    map.centerAndZoom(new BMap.Point(120.582112, 30.032053), 13); // 绍兴市
+
+    // 模拟设备数据
+    var deviceData = [
+      {
+        id: "DEV001",
+        type: "温湿度传感器",
+        name: "传感器01",
+        status: "在线",
+        model: "DHT11",
+        location: "浙江省绍兴市越城区XXX小区1号楼101室",
+        installDate: "2023-04-15",
+        nextMaintenanceDate: "2024-04-15"
+      },
+      {
+        id: "DEV002",
+        type: "门禁设备",
+        name: "门禁01",
+        status: "离线",
+        model: "XS-100",
+        location: "浙江省绍兴市越城区XXX小区2号楼201室",
+        installDate: "2022-09-01",
+        nextMaintenanceDate: "2023-09-01"
+      },
+      {
+        id: "DEV003",
+        type: "烟感探测器",
+        name: "探测器01",
+        status: "在线",
+        model: "FD-100",
+        location: "浙江省绍兴市越城区XXX小区3号楼301室",
+        installDate: "2021-12-01",
+        nextMaintenanceDate: "2022-12-01"
+      },
+      {
+        id: "DEV004",
+        type: "水浸探测器",
+        name: "探测器02",
+        status: "离线",
+        model: "WD-200",
+        location: "浙江省绍兴市越城区XXX小区4号楼401室",
+        installDate: "2022-06-15",
+        nextMaintenanceDate: "2023-06-15"
+      },
+      {
+        id: "DEV005",
+        type: "电表",
+        name: "电表01",
+        status: "在线",
+        model: "EM-300",
+        location: "浙江省绍兴市越城区XXX小区5号楼501室",
+        installDate: "2023-01-01",
+        nextMaintenanceDate: "2024-01-01"
+      },
+      {
+        id: "DEV006",
+        type: "水表",
+        name: "水表01",
+        status: "离线",
+        model: "WM-400",
+        location: "浙江省绍兴市越城区XXX小区6号楼601室",
+        installDate: "2022-03-01",
+        nextMaintenanceDate: "2023-03-01"
+      },
+      {
+        id: "DEV007",
+        type: "气表",
+        name: "气表01",
+        status: "在线",
+        model: "GM-500",
+        location: "浙江省绍兴市越城区XXX小区7号楼701室",
+        installDate: "2023-07-01",
+        nextMaintenanceDate: "2024-07-01"
+      },
+      {
+        id: "DEV008",
+        type: "摄像头",
+        name: "摄像头01",
+        status: "在线",
+        model: "VC-600",
+        location: "浙江省绍兴市越城区XXX小区8号楼801室",
+        installDate: "2022-11-15",
+        nextMaintenanceDate: "2023-11-15"
+      },
+      {
+        id: "DEV009",
+        type: "楼宇对讲",
+        name: "对讲01",
+        status: "离线",
+        model: "IP-700",
+        location: "浙江省绍兴市越城区XXX小区9号楼901室",
+        installDate: "2021-09-01",
+        nextMaintenanceDate: "2022-09-01"
+      },
+      {
+        id: "DEV010",
+        type: "停车场管理",
+        name: "车位01",
+        status: "在线",
+        model: "PM-800",
+        location: "浙江省绍兴市越城区XXX小区停车场",
+        installDate: "2022-05-01",
+        nextMaintenanceDate: "2023-05-01"
+      }
+    ];
+
+    // 展示设备数据
+    function displayDeviceData() {
+      var deviceTableBody = document.getElementById("device-table-body");
+      deviceTableBody.innerHTML = "";
+
+      deviceData.forEach(function(device) {
+        var row = document.createElement("tr");
+        row.innerHTML = "<td>" + device.id + "</td>" +
+                        "<td>" + device.type + "</td>" +
+                        "<td>" + device.name + "</td>" +
+                        "<td>" + device.status + "</td>" +
+                        "<td>" + device.model + "</td>" +
+                        "<td>" + device.location + "</td>" +
+                        "<td>" + device.installDate + "</td>" +
+                        "<td>" + device.nextMaintenanceDate + "</td>";
+        deviceTableBody.appendChild(row);
+      });
+
+      // 更新统计数据
+      document.getElementById("device-count").textContent = deviceData.length;
+      document.getElementById("online-devices").textContent = deviceData.filter(function(device) {
+        return device.status === "在线";
+      }).length;
+      document.getElementById("offline-devices").textContent = deviceData.filter(function(device) {
+        return device.status === "离线";
+      }).length;
+      document.getElementById("today-alerts").textContent = 20; // 模拟今日预警数
+      document.getElementById("alert-resolution-rate").textContent = "85%"; // 模拟今日处理率
+    }
+
+    displayDeviceData();
+  </script>
+</body>
+</html>
